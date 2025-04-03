@@ -26,7 +26,7 @@ const usedProps = Object.keys(defaultProps)
  * props.maxLine {Number|String} max lines allowed
  * props.ellipsis {String} the ellipsis indicator
  * props.trimRight {Boolean} should we trimRight the clamped text?
- * props.basedOn {String} letters|words
+ * props.basedOn {String|Function} letters|words|custom function that returns text chunks
  * props.className {String}
  */
 class LinesEllipsis extends React.Component {
@@ -91,16 +91,24 @@ class LinesEllipsis extends React.Component {
   reflow (props) {
     /* eslint-disable no-control-regex */
     const basedOn = props.basedOn || (/^[\x00-\x7F]+$/.test(props.text) ? 'words' : 'letters')
-    switch (basedOn) {
-      case 'words':
-        this.units = props.text.split(/\b|(?=\W)/)
-        break
-      case 'letters':
-        this.units = Array.from(props.text)
-        break
-      default:
-        throw new Error(`Unsupported options basedOn: ${basedOn}`)
+    
+    if (typeof basedOn === 'function') {
+      // Use custom function to split text
+      this.units = basedOn(props.text)
+    } else {
+      // Use predefined splitting strategies
+      switch (basedOn) {
+        case 'words':
+          this.units = props.text.split(/\b|(?=\W)/)
+          break
+        case 'letters':
+          this.units = Array.from(props.text)
+          break
+        default:
+          throw new Error(`Unsupported options basedOn: ${basedOn}`)
+      }
     }
+    
     this.maxLine = +props.maxLine || 1
     this.canvas.innerHTML = this.units.map((c) => {
       return `<span class='LinesEllipsis-unit'>${c}</span>`
